@@ -18,24 +18,64 @@ function resizeCanvas() {
 }
 
 resizeCanvas();
-    
-const ball = new Ball({
-    x: canvas.clientWidth / 13,
-    y: canvas.clientHeight /10,
-    size: 28,
-    color: '#facc15',
-    glowColor: '#f59e0b',
-});
+
+const ballSize = 24;
+const ballDiameter = ballSize * 2;
+const rowSpacing = ballDiameter;
+const ballRowCount = 5;
+const ballColors = [
+    { color: '#facc15', glowColor: '#f59e0b' },
+    { color: '#fb7185', glowColor: '#e11d48' },
+    { color: '#38bdf8', glowColor: '#0284c7' },
+    { color: '#a78bfa', glowColor: '#7c3aed' },
+];
+
+function createBallGrid() {
+    const balls = [];
+    const rowCount = Math.max(
+        1,
+        Math.min(
+            ballRowCount,
+            Math.floor((canvas.clientHeight - ballSize) / rowSpacing) + 1,
+        ),
+    );
+
+    for (let row = 0; row < rowCount; row += 1) {
+        const rowOffset = row % 2 === 0 ? 0 : ballSize;
+        const columnCount = Math.max(
+            1,
+            Math.floor(
+                (canvas.clientWidth - (ballDiameter + rowOffset)) / ballDiameter,
+            ) + 1,
+        );
+
+        for (let column = 0; column < columnCount; column += 1) {
+            const palette = ballColors[(row + column) % ballColors.length];
+
+            balls.push(new Ball({
+                x: ballSize + column * ballDiameter + rowOffset,
+                y: ballSize + row * rowSpacing,
+                size: ballSize,
+                color: palette.color,
+                glowColor: palette.glowColor,
+            }));
+        }
+    }
+
+    return balls;
+}
+
+let balls = createBallGrid();
 
 function drawGame() {
     ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-    ball.draw(ctx);
+
+    balls.forEach((ball) => ball.draw(ctx));
 }
 
 window.addEventListener('resize', () => {
     resizeCanvas();
-    ball.x = canvas.clientWidth / 13;
-    ball.y = canvas.clientHeight / 10;
+    balls = createBallGrid();
     drawGame();
 });
 
