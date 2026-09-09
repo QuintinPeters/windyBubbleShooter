@@ -21,13 +21,16 @@ resizeCanvas();
 
 const ballSize = 24;
 const ballDiameter = ballSize * 2;
-const rowSpacing = ballDiameter;
+const ballGap = 3;
+const ballSpacing = ballDiameter + ballGap;
+const rowSpacing = ballSpacing * Math.sqrt(3) / 2;
 const ballRowCount = 5;
 const ballColors = [
     { color: '#facc15', glowColor: '#f59e0b' },
     { color: '#fb7185', glowColor: '#e11d48' },
     { color: '#38bdf8', glowColor: '#0284c7' },
-    { color: '#a78bfa', glowColor: '#7c3aed' },
+    { color: '#29D877', glowColor: '#27c56e' },
+    { color: '#B65EFF', glowColor: '#6b33cc' },
 ];
 
 function createBallGrid() {
@@ -41,19 +44,19 @@ function createBallGrid() {
     );
 
     for (let row = 0; row < rowCount; row += 1) {
-        const rowOffset = row % 2 === 0 ? 0 : ballSize;
+        const rowOffset = row % 2 === 0 ? 0 : ballSpacing / 2;
         const columnCount = Math.max(
             1,
             Math.floor(
-                (canvas.clientWidth - (ballDiameter + rowOffset)) / ballDiameter,
+                (canvas.clientWidth - (ballDiameter + rowOffset)) / ballSpacing,
             ) + 1,
         );
 
         for (let column = 0; column < columnCount; column += 1) {
-            const palette = ballColors[(row + column) % ballColors.length];
+            const palette = ballColors[Math.floor(Math.random() * ballColors.length)];
 
             balls.push(new Ball({
-                x: ballSize + column * ballDiameter + rowOffset,
+                x: ballSize + column * ballSpacing + rowOffset,
                 y: ballSize + row * rowSpacing,
                 size: ballSize,
                 color: palette.color,
