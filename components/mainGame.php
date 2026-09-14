@@ -25,7 +25,7 @@
             <?php include 'components/windIndicator.php'; ?>
         </div>
     </div>
-    <canvas class="grid-col-2 col-span-2 border-zinc-200 border-2 w-full h-full" id="gameField" >
+    <canvas class="grid-col-2 col-span-2 border-zinc-200 border-2 w-2xl h-full" id="gameField" >
 
     </canvas>
 
