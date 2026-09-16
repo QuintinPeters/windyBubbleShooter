@@ -27,7 +27,7 @@ function resizeCanvas() {
 
 resizeCanvas();
 
-const ballSize = 24;
+const ballSize = 20;
 const ballDiameter = ballSize * 2;
 const ballGap = 3;
 const ballSpacing = ballDiameter + ballGap;
@@ -189,7 +189,7 @@ function getCurrentBall() {
   return new Ball({
     x: canvas.clientWidth / 2,
     y: canvas.clientHeight - 230,
-    size: 24,
+    size: 20,
     color: randomColor.color,
     glowColor: randomColor.glowColor,
   });
@@ -200,7 +200,7 @@ function getNextBall() {
   return new Ball({
     x: canvas.clientWidth / 2,
     y: canvas.clientHeight - 70,
-    size: 24,
+    size: 20,
     color: randomColor.color,
     glowColor: randomColor.glowColor,
   });
@@ -244,7 +244,7 @@ function shootBall() {
   }
 
   const { x, y } = getShooterPosition();
-  const speed = 12;
+  const speed = 15;
   const velocityX = Math.cos(aimAngle) * speed;
   const velocityY = Math.sin(aimAngle) * speed;
 

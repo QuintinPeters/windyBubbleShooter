@@ -2,7 +2,7 @@
     <div class="grid-col-1 p-8">
         <div class="px-4">
             <h2 class="text-center text-3xl font-bold text-white/70">Score:</h2>
-            <p id="score" class="text-center text-2xl font-medium text-yellow-400">0</p>
+            <p id="score" class="text-center text-3xl font-semibold text-yellow-400">0</p>
         </div>
         <div class="px-4 mt-8">
             <h2 class="text-center text-3xl font-bold text-white/70">Timer</h2>
