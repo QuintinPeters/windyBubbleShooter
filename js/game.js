@@ -9,8 +9,11 @@ import {
 const canvas = document.querySelector("#gameField");
 const ctx = canvas.getContext("2d");
 const score = document.getElementById("score");
+const startModal = document.getElementById("startGameModal");
+const startButton = document.getElementById("startButton");
 const pointsPerBall = 100;
 let totalScore = 0;
+
 
 if (!ctx) {
   throw new Error("Canvas context is not available.");
@@ -348,10 +351,45 @@ function animate() {
   }
 }
 
-function addBallRow() 
-{
-  
+function startgame() {
+  setTimer();
 }
+
+startButton.addEventListener("click", () => {
+  startModal.style.display = "none";
+  startgame();
+});
+
+function setTimer() {
+  const totalTime = 90;
+  let timeLeft = totalTime;
+  const timerBar = document.getElementById("timer-bar");
+
+  if (!timerBar) {
+    return;
+  }
+
+  const updateTimerBar = () => {
+    const percentageLeft = (timeLeft / totalTime) * 100;
+    timerBar.style.width = `${percentageLeft}%`;
+  };
+
+  updateTimerBar();
+
+  const timer = setInterval(() => {
+    timeLeft -= 1;
+    updateTimerBar();
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      timerBar.style.width = "0%";
+      timerBar.textContent = "0s";
+      alert("Time's up! Game Over!");
+    }
+  }, 1000);
+}
+
+
 
 function drawGame() {
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
