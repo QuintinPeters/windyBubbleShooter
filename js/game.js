@@ -5,30 +5,30 @@ import {
   findFloatingBalls,
   handleProjectileCollision,
 } from "./collision.js";
+import { createBallGrid, createBallRow, getGridPosition } from "./grid.js";
+import { drawGame as renderGame, resizeCanvas } from "./draw.js";
+import { createTimer } from "./timer.js";
 
 const canvas = document.querySelector("#gameField");
 const ctx = canvas.getContext("2d");
 const score = document.getElementById("score");
 const startModal = document.getElementById("startGameModal");
 const startButton = document.getElementById("startButton");
+const pauseButton = document.getElementById("pauseButton");
+const pauseModal = document.getElementById("pauseModal");
+const continueButton = document.getElementById("continueButton");
+const GameOverModal = document.getElementById("GameOverModal");
+const finalScore = document.getElementById("finalScore");
+const playAgainButton = document.getElementById("playAgain");
 const pointsPerBall = 100;
 let totalScore = 0;
-
+let timerControls = null;
 
 if (!ctx) {
   throw new Error("Canvas context is not available.");
 }
 
-function resizeCanvas() {
-  const bounds = canvas.getBoundingClientRect();
-  const pixelRatio = window.devicePixelRatio || 1;
-
-  canvas.width = bounds.width * pixelRatio;
-  canvas.height = bounds.height * pixelRatio;
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-}
-
-resizeCanvas();
+resizeCanvas(canvas, ctx);
 
 const ballSize = 20;
 const ballDiameter = ballSize * 2;
@@ -44,47 +44,19 @@ const ballColors = [
   { color: "#B65EFF", glowColor: "#6b33cc" },
 ];
 
-function createBallGrid() {
-  const balls = [];
-  const rowCount = Math.max(
-    1,
-    Math.min(
-      ballRowCount,
-      Math.floor((canvas.clientHeight - ballSize) / rowSpacing) + 1,
-    ),
-  );
+const collisionLayout = {
+  ballSize,
+  ballSpacing,
+  rowSpacing,
+  rowOffsetPhase: 0,
+};
 
-  for (let row = 0; row < rowCount; row += 1) {
-    const rowOffset = row % 2 === 0 ? 0 : ballSpacing / 2;
-    const columnCount = Math.max(
-      1,
-      Math.floor(
-        (canvas.clientWidth - (ballDiameter + rowOffset)) / ballSpacing,
-      ) + 1,
-    );
-
-    for (let column = 0; column < columnCount; column += 1) {
-      const palette = ballColors[Math.floor(Math.random() * ballColors.length)];
-
-      balls.push(
-        new Ball({
-          x: ballSize + column * ballSpacing + rowOffset,
-          y: ballSize + row * rowSpacing,
-          size: ballSize,
-          color: palette.color,
-          glowColor: palette.glowColor,
-          row: row,
-          column: column,
-        }),
-      );
-    }
-  }
-
-  return balls;
-}
-
-const balls = createBallGrid();
-const collisionLayout = { ballSize, ballSpacing, rowSpacing };
+const balls = createBallGrid({
+  canvas,
+  ballColors,
+  layout: { ...collisionLayout, ballRowCount },
+  Ball,
+});
 const shufflerRadius = 30;
 
 function getShooterPosition() {
@@ -99,74 +71,6 @@ function getShufflerPosition() {
     x: canvas.clientWidth - 220,
     y: canvas.clientHeight - 200,
   };
-}
-
-function drawShooter() {
-  const shooterX = canvas.clientWidth / 2;
-  const shooterY = canvas.clientHeight - 150;
-  const { x: shufflerX, y: shufflerY } = getShufflerPosition();
-
-  ctx.beginPath();
-  ctx.arc(shooterX, shooterY, 115, 0, 2 * Math.PI);
-
-  ctx.fillStyle = "#D9D9D966";
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(shooterX, shooterY, 50, 0, 2 * Math.PI);
-  ctx.fillStyle = "#D9D9D966";
-  ctx.fill();
-
-  ctx.beginPath();
-  ctx.arc(shufflerX, shufflerY, shufflerRadius, 0, 2 * Math.PI);
-  ctx.fillStyle = "#D9D9D988";
-  ctx.fill();
-
-  ctx.save();
-  ctx.translate(shufflerX, shufflerY);
-  ctx.strokeStyle = "#000000";
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = "arrow";
-  ctx.lineJoin = "round";
-
-  ctx.beginPath();
-  ctx.moveTo(-13, -7);
-  ctx.lineTo(13, -7);
-  ctx.lineTo(8, -12);
-  ctx.moveTo(13, -7);
-  ctx.lineTo(8, -2);
-  ctx.moveTo(13, 7);
-  ctx.lineTo(-13, 7);
-  ctx.lineTo(-8, 2);
-  ctx.moveTo(-13, 7);
-  ctx.lineTo(-8, 12);
-  ctx.stroke();
-  ctx.restore();
-
-  if (!projectile) {
-    currentBall.draw(ctx);
-  }
-  nextBall.draw(ctx);
-}
-
-function drawAimLine(angle) {
-  const { x: shooterX, y: shooterY } = getShooterPosition();
-
-  const length = 300;
-
-  ctx.save();
-  ctx.setLineDash([2, 40]);
-  ctx.beginPath();
-  ctx.moveTo(shooterX, shooterY);
-  ctx.lineTo(
-    shooterX + Math.cos(angle) * length,
-    shooterY + Math.sin(angle) * length,
-  );
-
-  ctx.strokeStyle = "#25C1FF";
-  ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.restore();
 }
 
 let aimAngle = 0;
@@ -239,7 +143,8 @@ canvas.addEventListener("click", (event) => {
   }
 });
 
-let ballsShot = 0; 
+let ballsShot = 0;
+let rowInsertionPending = false;
 
 function shootBall() {
   if (projectile) {
@@ -260,11 +165,10 @@ function shootBall() {
   currentBall.x = getShooterPosition().x;
   currentBall.y = getShooterPosition().y;
   nextBall = getNextBall();
-  ballsShot += 1; 
-  console.log(`Balls shot: ${ballsShot}`);
+  ballsShot += 1;
+  rowInsertionPending = ballsShot % 6 === 0;
   animate();
 }
-
 
 canvas.addEventListener("click", (event) => {
   const rect = canvas.getBoundingClientRect();
@@ -280,8 +184,35 @@ canvas.addEventListener("click", (event) => {
   }
 });
 
+function insertRow() {
+  collisionLayout.rowOffsetPhase =
+    (collisionLayout.rowOffsetPhase + 1) % 2;
+
+  for (const ball of balls) {
+    ball.row += 1;
+    const position = getGridPosition(ball.row, ball.column, collisionLayout);
+    ball.x = position.x;
+    ball.y = position.y;
+  }
+
+  balls.unshift(...createBallRow(0, {
+    canvas,
+    ballColors,
+    layout: collisionLayout,
+    Ball,
+  }));
+}
+
+function  finishShot() {
+  if (rowInsertionPending) {
+    insertRow();
+    rowInsertionPending = false;
+  }
+}
+
 function animate() {
   if (projectile) {
+    let shotFinished = false;
     projectile.x += projectile.velocityX;
     projectile.y += projectile.velocityY;
 
@@ -290,23 +221,20 @@ function animate() {
         const attachedBall = projectile;
 
         if (
-          handleProjectileCollision(
+          handleProjectileCollision(attachedBall, ball, balls, collisionLayout)
+        ) {
+          const connectedBalls = findConnectedBalls(
             attachedBall,
-            ball,
             balls,
             collisionLayout,
-          )
-        ) {
-          const connectedBalls = findConnectedBalls(attachedBall, balls);
+          );
 
           if (connectedBalls.length >= 4) {
             const floatingBalls = findFloatingBalls(
               balls.filter((ball) => !connectedBalls.includes(ball)),
+              collisionLayout,
             );
-            const destroyedBalls = [
-              ...connectedBalls,
-              ...floatingBalls,
-            ];
+            const destroyedBalls = [...connectedBalls, ...floatingBalls];
 
             totalScore += destroyedBalls.length * pointsPerBall;
             score.textContent = `${totalScore}`;
@@ -321,6 +249,7 @@ function animate() {
           }
 
           projectile = null;
+          shotFinished = true;
         }
         break;
       }
@@ -341,6 +270,11 @@ function animate() {
 
     if (projectile && projectile.y + projectile.size < 0) {
       projectile = null;
+      shotFinished = true;
+    }
+
+    if (shotFinished) {
+      finishShot();
     }
   }
 
@@ -352,7 +286,7 @@ function animate() {
 }
 
 function startgame() {
-  setTimer();
+  timerControls = createTimer(document.getElementById("timer-bar"), gameOver);
 }
 
 startButton.addEventListener("click", () => {
@@ -360,49 +294,64 @@ startButton.addEventListener("click", () => {
   startgame();
 });
 
-function setTimer() {
-  const totalTime = 90;
-  let timeLeft = totalTime;
-  const timerBar = document.getElementById("timer-bar");
+function gameOver() {
+  if (timerControls) {
+    timerControls = null;
+  }
+  finalScore.textContent = totalScore;
+  GameOverModal.style.display = "flex";
+}
 
-  if (!timerBar) {
+playAgainButton.addEventListener("click", () => {
+  GameOverModal.style.display = "none";
+  totalScore = 0;
+  score.textContent = `${totalScore}`;
+  balls.length = 0;
+  const newBalls = createBallGrid();
+  balls.push(...newBalls);
+  ballsShot = 0;
+  rowInsertionPending = false;
+  collisionLayout.rowOffsetPhase = 0;
+  currentBall = getCurrentBall();
+  nextBall = getNextBall();
+  resizeCanvas(canvas, ctx);
+  drawGame();
+  startgame();
+});
+
+pauseButton.addEventListener("click", () => {
+  if (!timerControls) {
     return;
   }
 
-  const updateTimerBar = () => {
-    const percentageLeft = (timeLeft / totalTime) * 100;
-    timerBar.style.width = `${percentageLeft}%`;
-  };
+  if (pauseButton.dataset.paused === "true") {
+    timerControls.resume();
+    pauseButton.dataset.paused = "false";
+  } else {
+    timerControls.pause();
+    pauseButton.dataset.paused = "true";
+  }
+  pauseModal.style.display = "flex";
+});
 
-  updateTimerBar();
-
-  const timer = setInterval(() => {
-    timeLeft -= 1;
-    updateTimerBar();
-
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      timerBar.style.width = "0%";
-      timerBar.textContent = "0s";
-      alert("Time's up! Game Over!");
-    }
-  }, 1000);
-}
-
-
+continueButton.addEventListener("click", () => {
+  if (!timerControls) {
+    return;
+  }
+  timerControls.resume();
+  pauseButton.dataset.paused = "false";
+  pauseModal.style.display = "none";
+});
 
 function drawGame() {
-  ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-  drawAimLine(aimAngle);
-  balls.forEach((ball) => ball.draw(ctx));
-  drawShooter();
-  if (projectile) {
-    projectile.draw(ctx);
-  }
+  renderGame(ctx, canvas, balls, currentBall, nextBall, projectile, aimAngle, {
+    getShooterPosition,
+    getShufflerPosition,
+  });
 }
 
 window.addEventListener("resize", () => {
-  resizeCanvas();
+  resizeCanvas(canvas, ctx);
   if (!projectile) {
     currentBall.x = getShooterPosition().x;
     currentBall.y = getShooterPosition().y;

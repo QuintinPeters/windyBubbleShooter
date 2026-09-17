@@ -30,11 +30,11 @@
     </canvas>
 
     <div class="grid-col-4 p-8">
-        <button id="pauseGame" class="border-slate-700 border-3 bg-white/30 text-black font-bold p-3 rounded-full">
+        <button id="pauseButton" class="border-slate-700 border-3 bg-white/30 text-black font-bold p-3 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" height="40px" viewBox="0 -960 960 960" width="40px" fill="white">
                 <path d="M560-200v-560h160v560H560Zm-320 0v-560h160v560H240Z" />
             </svg>
         </button>
-        <?php include 'components/pauseModal.php'; ?>
+        <?php include 'components/modals/pauseModal.php'; ?>
     </div>
 </div>

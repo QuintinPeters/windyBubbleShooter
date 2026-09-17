@@ -1,5 +1,9 @@
-export function getGridPosition(row, column, layout) {
-  const rowOffset = row % 2 === 0 ? 0 : layout.ballSpacing / 2;
+import { getGridPosition, getNeighborPositions, isGridPositionOccupied } from "./grid.js";
+export { getGridPosition };
+
+/* export function getGridPosition(row, column, layout) {
+  const rowParity = (row + (layout.rowOffsetPhase || 0)) % 2;
+  const rowOffset = rowParity === 0 ? 0 : layout.ballSpacing / 2;
 
   return {
     x: layout.ballSize + column * layout.ballSpacing + rowOffset,
@@ -7,8 +11,10 @@ export function getGridPosition(row, column, layout) {
   };
 }
 
-export function getNeighborPositions(row, column) {
-  if (row % 2 === 0) {
+export function getNeighborPositions(row, column, layout = {}) {
+  const rowParity = (row + (layout.rowOffsetPhase || 0)) % 2;
+
+  if (rowParity === 0) {
     return [
       { row, column: column - 1 },
       { row, column: column + 1 },
@@ -31,12 +37,15 @@ export function getNeighborPositions(row, column) {
 
 export function isGridPositionOccupied(balls, row, column) {
   return balls.some((ball) => ball.row === row && ball.column === column);
-}
+} */
 
 export function findBestGridPosition(hitBall, projectile, balls, layout) {
-  const freePositions = getNeighborPositions(hitBall.row, hitBall.column).filter(
-    (position) =>
-      !isGridPositionOccupied(balls, position.row, position.column),
+  const freePositions = getNeighborPositions(
+    hitBall.row,
+    hitBall.column,
+    layout,
+  ).filter((position) =>
+    !isGridPositionOccupied(balls, position.row, position.column),
   );
 
   if (freePositions.length === 0) {
@@ -70,13 +79,18 @@ export function checkCollision(ballA, ballB) {
   );
 }
 
-export function findConnectedBalls(startBall, balls) {
+export function findConnectedBalls(startBall, balls, layout) {
   const connected = [];
   const queue = [startBall];
   const visited = new Set();
+  const ballsByPosition = new Map(
+    balls.map((ball) => [`${ball.row}:${ball.column}`, ball]),
+  );
+  let queueIndex = 0;
 
-  while (queue.length > 0) {
-    const ball = queue.shift();
+  while (queueIndex < queue.length) {
+    const ball = queue[queueIndex];
+    queueIndex += 1;
     const key = `${ball.row}:${ball.column}`;
 
     if (visited.has(key)) {
@@ -90,11 +104,9 @@ export function findConnectedBalls(startBall, balls) {
     }
 
     connected.push(ball);
-
-    for (const position of getNeighborPositions(ball.row, ball.column)) {
-      const neighbor = balls.find(
-        (candidate) =>
-          candidate.row === position.row && candidate.column === position.column,
+    for (const position of getNeighborPositions(ball.row, ball.column, layout)) {
+      const neighbor = ballsByPosition.get(
+        `${position.row}:${position.column}`,
       );
 
       if (neighbor && !visited.has(`${neighbor.row}:${neighbor.column}`)) {
@@ -106,12 +118,17 @@ export function findConnectedBalls(startBall, balls) {
   return connected;
 }
 
-export function findFloatingBalls(balls) {
+export function findFloatingBalls(balls, layout) {
   const supported = new Set();
   const queue = balls.filter((ball) => ball.row === 0);
+  const ballsByPosition = new Map(
+    balls.map((ball) => [`${ball.row}:${ball.column}`, ball]),
+  );
+  let queueIndex = 0;
 
-  while (queue.length > 0) {
-    const ball = queue.shift();
+  while (queueIndex < queue.length) {
+    const ball = queue[queueIndex];
+    queueIndex += 1;
     const key = `${ball.row}:${ball.column}`;
 
     if (supported.has(key)) {
@@ -119,11 +136,9 @@ export function findFloatingBalls(balls) {
     }
 
     supported.add(key);
-
-    for (const position of getNeighborPositions(ball.row, ball.column)) {
-      const neighbor = balls.find(
-        (candidate) =>
-          candidate.row === position.row && candidate.column === position.column,
+    for (const position of getNeighborPositions(ball.row, ball.column, layout)) {
+      const neighbor = ballsByPosition.get(
+        `${position.row}:${position.column}`,
       );
 
       if (neighbor && !supported.has(`${neighbor.row}:${neighbor.column}`)) {
