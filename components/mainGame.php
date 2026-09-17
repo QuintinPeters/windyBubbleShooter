@@ -11,8 +11,6 @@
                 <div class="h-5 w-full overflow-hidden rounded-full bg-white/20 ">
                     <div id="timer-bar" class="h-full w-3/4 rounded-full bg-yellow-400 transition-all duration-1000">
                     </div>
-
-
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" height="32px" viewBox="0 -960 960 960" width="32px"
                     fill="white">
@@ -25,7 +23,7 @@
             <?php include 'components/windIndicator.php'; ?>
         </div>
     </div>
-    <canvas class="grid-col-2 col-span-2 border-zinc-200 border-2 w-2xl h-full" id="gameField" >
+    <canvas class="grid-col-2 col-span-2 border-zinc-200 border-2 w-2xl h-full" id="gameField">
 
     </canvas>
 

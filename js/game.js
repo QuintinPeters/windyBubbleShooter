@@ -8,6 +8,7 @@ import {
 import { createBallGrid, createBallRow, getGridPosition } from "./grid.js";
 import { drawGame as renderGame, resizeCanvas } from "./draw.js";
 import { createTimer } from "./timer.js";
+import { Wind } from "./wind.js";
 
 const canvas = document.querySelector("#gameField");
 const ctx = canvas.getContext("2d");
@@ -23,6 +24,49 @@ const playAgainButton = document.getElementById("playAgain");
 const pointsPerBall = 100;
 let totalScore = 0;
 let timerControls = null;
+
+function updateWindIndicator(currentWind) {
+  const leftLevels = [2, 1, 0].map((level) =>
+    document.getElementById(`wind-left-${level}`),
+  );
+  const rightLevels = [0, 1, 2].map((level) =>
+    document.getElementById(`wind-right-${level}`),
+  );
+  const label = document.getElementById("wind-label");
+  const directionIcon = document.getElementById("wind-direction");
+  const activeLevels = currentWind.strength === 0
+    ? 0
+    : currentWind.strengthLevels.indexOf(currentWind.strength);
+  const levels = Math.max(0, activeLevels);
+  const activeSide = currentWind.direction < 0 ? leftLevels : rightLevels;
+  const inactiveSide = currentWind.direction < 0 ? rightLevels : leftLevels;
+
+  [...leftLevels, ...rightLevels].forEach((level) => {
+    level.classList.remove("bg-sky-300");
+    level.classList.add("bg-zinc-300/50");
+  });
+
+  activeSide.forEach((level, index) => {
+    if (index < levels) {
+      level.classList.remove("bg-zinc-300/50");
+      level.classList.add("bg-sky-300");
+    }
+  });
+
+  inactiveSide.forEach((level) => {
+    level.classList.remove("bg-sky-300");
+    level.classList.add("bg-zinc-300/50");
+  });
+
+  label.textContent = levels === 0
+    ? "No wind"
+    : "Wind";
+  directionIcon.style.transform = currentWind.direction < 0
+    ? "rotate(-90deg)"
+    : "rotate(90deg)";
+}
+
+const wind = new Wind({ onChange: updateWindIndicator });
 
 if (!ctx) {
   throw new Error("Canvas context is not available.");
@@ -51,11 +95,15 @@ const collisionLayout = {
   rowOffsetPhase: 0,
 };
 
-const balls = createBallGrid({
+const gridOptions = {
   canvas,
   ballColors,
   layout: { ...collisionLayout, ballRowCount },
   Ball,
+};
+
+const balls = createBallGrid({
+  ...gridOptions,
 });
 const shufflerRadius = 30;
 
@@ -152,7 +200,7 @@ function shootBall() {
   }
 
   const { x, y } = getShooterPosition();
-  const speed = 15;
+  const speed = 5;
   const velocityX = Math.cos(aimAngle) * speed;
   const velocityY = Math.sin(aimAngle) * speed;
 
@@ -213,6 +261,7 @@ function  finishShot() {
 function animate() {
   if (projectile) {
     let shotFinished = false;
+    wind.apply(projectile, 1);
     projectile.x += projectile.velocityX;
     projectile.y += projectile.velocityY;
 
@@ -307,7 +356,7 @@ playAgainButton.addEventListener("click", () => {
   totalScore = 0;
   score.textContent = `${totalScore}`;
   balls.length = 0;
-  const newBalls = createBallGrid();
+  const newBalls = createBallGrid(gridOptions);
   balls.push(...newBalls);
   ballsShot = 0;
   rowInsertionPending = false;
