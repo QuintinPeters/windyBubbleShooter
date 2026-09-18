@@ -1,7 +1,7 @@
 export class Wind {
   constructor({
     strengthLevels = [0, 0.015, 0.03, 0.05],
-    interval = 15000,
+    interval = 10000,
     maxVelocity = 18,
     onChange = () => {},
   } = {}) {

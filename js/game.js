@@ -200,7 +200,7 @@ function shootBall() {
   }
 
   const { x, y } = getShooterPosition();
-  const speed = 5;
+  const speed = 10;
   const velocityX = Math.cos(aimAngle) * speed;
   const velocityY = Math.sin(aimAngle) * speed;
 
