@@ -150,4 +150,4 @@ Mogelijke toekomstige uitbreidingen zijn:
 
 **Quintin Peters**
 
-Dit project is ontwikkeld als onderdeel van een opleiding Software Developer.
+Dit project is ontwikkeld als onderdeel van de opleiding Fontys ICT.
